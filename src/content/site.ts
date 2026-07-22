@@ -87,7 +87,7 @@ export const site = {
 
   about: {
     body: [
-      'I am a postdoctoral machine learning researcher at the Institut ' +
+      'I am a postdoctoral astrophysics researcher at the Institut ' +
         "d'Astrophysique de Paris, with a PhD in cosmology from Sorbonne " +
         'University. I work primarility on large-scale structure analsysis,' +
         ' preparing the statistical and machine-learning tools and methods for '+ 
