@@ -1,0 +1,151 @@
+/* ---------- reset ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+:where(button, a):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+:where(h2, h3):focus-visible,
+:where(h2, h3):focus {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- tokens ---------- */
+:root {
+  /* --bg matches FOG_COLOR in src/three/ps1.ts, so the canvas and the page
+     behind it are the same colour. Change one, change the other. */
+  --bg: #585ba8;
+  --sky-top: #0b0a2b;
+  --sky-mid: #312f7d;
+  --sky-horizon: #7378cc;
+
+  --surface: 18 12 34;
+  --text: #f4ecff;
+  --text-dim: #bda8d4;
+  --border: rgb(255 255 255 / 0.14);
+  --accent: #ffc7a0;
+  --accent-cool: #9ad9ff;
+
+  --radius: 4px; /* the era had no rounded corners to speak of */
+
+  --step--1: clamp(0.78rem, 0.75rem + 0.12vw, 0.85rem);
+  --step-0: clamp(0.95rem, 0.92rem + 0.2vw, 1.05rem);
+  --step-1: clamp(1.15rem, 1.05rem + 0.5vw, 1.4rem);
+  --step-2: clamp(1.5rem, 1.25rem + 1.2vw, 2.15rem);
+  --step-3: clamp(2rem, 1.4rem + 3vw, 3.6rem);
+
+  color-scheme: dark;
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+    sans-serif;
+  font-size: var(--step-0);
+  color: var(--text);
+  background: var(--bg);
+}
+
+body {
+  min-height: 100svh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  /* The world is navigated, not scrolled — the page itself never moves. */
+  overflow: hidden;
+}
+
+/* ---------- layer 0: the world ---------- */
+.scene-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  /* Stand-in for the sky while the 3D chunk loads, and the permanent fallback
+     when WebGL is unavailable. */
+  background: linear-gradient(
+    to bottom,
+    var(--sky-top) 0%,
+    var(--sky-mid) 42%,
+    var(--sky-horizon) 62%,
+    #3b3f7e 100%
+  );
+}
+
+/* The canvas renders at a fraction of display resolution (see quality.ts).
+   Nearest-neighbour upscaling is what turns that into chunky pixels rather
+   than a blurry mess — it is the whole point, not an artefact. */
+.scene-layer--live canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  image-rendering: pixelated;
+}
+
+/* ---------- layer 1: the panel ---------- */
+main {
+  position: relative;
+  z-index: 1;
+  pointer-events: none; /* only the panel itself is interactive */
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  padding: clamp(0.75rem, 3vw, 2.5rem);
+}
+
+/* ---------- utility ---------- */
+.skip-link {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 10;
+  padding: 0.6rem 1rem;
+  background: rgb(var(--surface));
+  color: var(--text);
+  transform: translateY(-200%);
+  transition: transform 150ms ease;
+  pointer-events: auto;
+}
+
+.skip-link:focus-visible {
+  transform: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

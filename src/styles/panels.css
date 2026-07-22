@@ -1,0 +1,434 @@
+/* The panel layer.
+
+   Contrast is the governing constraint: the sky behind these runs from near
+   black at the zenith to pale peach at the horizon, and the camera moves. A
+   surface that relied on backdrop-filter for legibility would fail somewhere
+   along the flight, so the alpha stays high and the blur is decoration. */
+
+.panel {
+  position: relative;
+  pointer-events: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: linear-gradient(
+    155deg,
+    rgb(var(--surface) / 0.86) 0%,
+    rgb(var(--surface) / 0.93) 100%
+  );
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.07) inset,
+    0 30px 70px -35px rgb(0 0 0 / 0.95);
+
+  opacity: 0;
+  transform: translateY(14px) scale(0.994);
+  /* Asymmetric on purpose. Entering is slow, and starts the moment the camera
+     does, so the panel resolves over the flight rather than popping in on
+     arrival. Leaving is quick, because the old content has to be clear of the
+     screen before the world starts moving under it. */
+  transition:
+    opacity 900ms ease-out,
+    transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, opacity;
+}
+
+.panel:not(.is-visible) {
+  transition-duration: 260ms;
+  transition-timing-function: ease-in;
+}
+
+.panel.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .panel {
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+    backdrop-filter: blur(10px) saturate(120%);
+  }
+}
+
+/* Entry panel: centred, because its landmark is centred too. */
+.panel--hub {
+  place-self: center;
+  width: min(46rem, 100%);
+  max-height: 100%;
+}
+
+/* Section panels sit to the left; the station's camera aims so that the
+   landmark composes into the space on the right. */
+.panel--section {
+  place-self: center start;
+  width: min(38rem, 100%);
+  max-height: 100%;
+}
+
+@media (max-width: 900px) {
+  .panel--section {
+    place-self: end center;
+    width: 100%;
+    max-height: 82%;
+  }
+}
+
+.panel__scroll {
+  max-height: min(86svh, 46rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(1.25rem, 3.5vw, 2.5rem);
+}
+
+.panel__scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.panel__scroll::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.16);
+}
+
+/* ---------- entry panel ---------- */
+.hub__location,
+.panel__eyebrow,
+.meta {
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.hub__name {
+  margin-block-start: 0.6rem;
+  font-size: var(--step-3);
+  font-weight: 650;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.hub__role {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.hub__tagline {
+  margin-block-start: 0.6rem;
+  font-size: var(--step-1);
+  color: var(--accent-cool);
+  text-wrap: balance;
+}
+
+.hub__intro {
+  margin-block-start: 1rem;
+  max-width: 48ch;
+  color: var(--text-dim);
+}
+
+/* ---------- section choices ---------- */
+.choices {
+  margin-block-start: 2rem;
+}
+
+.choices ul {
+  display: grid;
+  gap: 1px;
+  padding: 0;
+  list-style: none;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+
+.choice {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.1rem 1rem;
+  padding: 0.95rem 1.15rem;
+  background: rgb(var(--surface) / 0.55);
+  text-decoration: none;
+  transition:
+    background 180ms ease,
+    padding-left 180ms ease;
+}
+
+.choice__label {
+  font-size: var(--step-1);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.choice__blurb {
+  grid-column: 1;
+  font-size: var(--step--1);
+  color: var(--text-dim);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.choice__arrow {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  font-size: 1.3rem;
+  color: var(--accent);
+  opacity: 0.5;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.choice:hover,
+.choice:focus-visible {
+  background: rgb(var(--surface) / 0.98);
+  padding-left: 1.5rem;
+}
+
+.choice:hover .choice__label,
+.choice:focus-visible .choice__label {
+  color: var(--accent);
+}
+
+.choice:hover .choice__arrow,
+.choice:focus-visible .choice__arrow {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+/* ---------- section panels ---------- */
+.back {
+  display: inline-block;
+  margin-block-end: 1.25rem;
+  font-size: var(--step--1);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 180ms ease;
+}
+
+.back:hover,
+.back:focus-visible {
+  color: var(--accent);
+}
+
+.panel__title {
+  margin-block: 0.4rem 1.25rem;
+  font-size: var(--step-2);
+  font-weight: 640;
+  letter-spacing: -0.02em;
+}
+
+.subheading {
+  margin-block: 2rem 0.9rem;
+  font-size: var(--step-1);
+  font-weight: 620;
+}
+
+.prose {
+  margin-block-end: 0.9rem;
+  color: var(--text-dim);
+  max-width: 62ch;
+}
+
+.meta {
+  margin-block-start: 1.25rem;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+}
+
+/* ---------- tags ---------- */
+.tags,
+.skills {
+  padding: 0;
+  list-style: none;
+}
+
+.skills {
+  margin-block-start: 1.5rem;
+  display: grid;
+  gap: 1.1rem;
+}
+
+.skills__group {
+  margin-block-end: 0.5rem;
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cool);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.tag {
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--border);
+  font-size: var(--step--1);
+  color: var(--text-dim);
+}
+
+/* ---------- experience ---------- */
+.timeline {
+  display: grid;
+  gap: 1.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.role__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+}
+
+.role__title {
+  font-size: var(--step-0);
+  font-weight: 620;
+}
+
+.role__period {
+  font-size: var(--step--1);
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.role__org {
+  margin-block-start: 0.15rem;
+  font-size: var(--step--1);
+  color: var(--accent-cool);
+}
+
+.role__points {
+  margin-block-start: 0.6rem;
+  padding-inline-start: 1.1rem;
+  display: grid;
+  gap: 0.4rem;
+  color: var(--text-dim);
+  font-size: var(--step--1);
+}
+
+.role__points li::marker {
+  color: var(--accent);
+}
+
+.education {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.education li {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.education__degree {
+  font-weight: 600;
+}
+
+.education__org,
+.education__period {
+  font-size: var(--step--1);
+  color: var(--text-dim);
+}
+
+/* ---------- publications ---------- */
+.papers {
+  margin-block-start: 1.25rem;
+  display: grid;
+  gap: 1px;
+  padding: 0;
+  list-style: none;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+
+.paper {
+  display: block;
+  padding: 0.9rem 1.1rem;
+  background: rgb(var(--surface) / 0.55);
+  text-decoration: none;
+  transition: background 180ms ease;
+}
+
+.paper:hover,
+.paper:focus-visible {
+  background: rgb(var(--surface) / 0.98);
+}
+
+.paper__title {
+  display: block;
+  font-weight: 560;
+  line-height: 1.4;
+  font-size: var(--step-0);
+}
+
+.paper:hover .paper__title {
+  color: var(--accent);
+}
+
+.paper__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.8rem;
+  margin-block-start: 0.45rem;
+  font-size: var(--step--1);
+  color: var(--text-dim);
+}
+
+.badge {
+  padding: 0.05rem 0.45rem;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.paper__cites {
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-cool);
+}
+
+.paper__arxiv {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  opacity: 0.75;
+}
+
+/* ---------- contact ---------- */
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-block-start: 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 1.05rem;
+  border: 1px solid var(--border);
+  text-decoration: none;
+  font-size: var(--step--1);
+  letter-spacing: 0.04em;
+  transition:
+    border-color 180ms ease,
+    color 180ms ease,
+    background 180ms ease;
+}
+
+.link:hover,
+.link:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgb(255 199 160 / 0.1);
+}
