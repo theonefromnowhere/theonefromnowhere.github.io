@@ -70,6 +70,46 @@
   margin-inline-start: clamp(0rem, (100vw - 68rem) * 0.55, 16vw);
 }
 
+/* Experience carries far more than the other sections — four roles with bullet
+   lists, plus education — so it gets extra width. The hammer's station is given
+   a correspondingly larger offsetFraction in world.ts to stay clear of the
+   wider panel; the two numbers move together.
+
+   The `70vw` term is the safety rail. The hammer's ring occupies roughly a
+   tenth of the frame width either side of its centre, which at this station's
+   offsetFraction puts its left edge near 0.74 of the viewport — so the panel
+   is never allowed past 0.70, whatever the rem cap would otherwise give. That
+   is what keeps a wide panel from swallowing the landmark on smaller screens
+   instead of on none.
+
+   Gated at 1200px: below that there is not room for two columns anyway. */
+@media (min-width: 1200px) {
+  .panel--section[data-section='experience'] {
+    width: min(54rem, 70vw - 2.5rem);
+    margin-inline-start: clamp(0rem, (100vw - 90rem) * 0.4, 10vw);
+  }
+}
+
+/* ---------- experience: roles beside education ---------- */
+.experience {
+  display: grid;
+  gap: 1.75rem;
+}
+
+@media (min-width: 1200px) {
+  .experience {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: clamp(1.5rem, 3vw, 2.75rem);
+    align-items: start;
+  }
+
+  /* The heading's top margin exists to separate it from the roles above it.
+     Side by side there is nothing above it to separate from. */
+  .experience__education .subheading {
+    margin-block-start: 0;
+  }
+}
+
 /* Narrow screens: the panel spans the width, so there is no "beside the
    landmark" composition left to preserve. Align to the top rather than the
    bottom — the heading and the back link are what you need in reach first, and
@@ -88,7 +128,10 @@
 }
 
 .panel__scroll {
-  max-height: min(86svh, 46rem);
+  /* The rem cap keeps a panel from becoming a full-height wall of text on a
+     tall monitor; the svh term keeps it on screen on a short one. Raised for
+     Experience's sake — four roles with bullet lists need the room. */
+  max-height: min(88svh, 62rem);
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: clamp(1.25rem, 3.5vw, 2.5rem);

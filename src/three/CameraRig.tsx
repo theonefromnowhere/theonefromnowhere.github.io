@@ -91,6 +91,11 @@ export function CameraRig({ route, animate }: CameraRigProps) {
   )
 
   useEffect(() => {
+    ;(window as never as Record<string, unknown>).__probe = () =>
+      JSON.stringify(Object.fromEntries(Object.entries(stations).map(([k, st]) => {
+        const v = st.landmark.position.clone(); v.y += 8; v.project(camera)
+        return [k, +((v.x + 1) / 2).toFixed(4)]
+      })))
     const target = stations[route]
 
     if (!animate) {

@@ -102,7 +102,8 @@ const SPECS: Record<Route, StationSpec> = {
     camera: [37, -21],
     altitude: 15,
     aim: 11,
-    offsetFraction: 0.55,
+    // Pushed further right than the other sections: its panel is wider.
+    offsetFraction: 0.68,
     kind: 'hammer',
     scale: 1,
     color: '#ffc39b',

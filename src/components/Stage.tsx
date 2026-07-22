@@ -59,6 +59,7 @@ export function Stage() {
       <Panel
         ref={panelRef}
         variant={section ? 'section' : 'hub'}
+        section={section?.id}
         className={visible ? 'is-visible' : undefined}
       >
         {section && Body ? (

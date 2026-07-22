@@ -35,38 +35,45 @@ function About() {
 }
 
 function Experience() {
+  // Two columns on a wide panel, one when it narrows — see .experience in
+  // panels.css. Education is much shorter than the roles, so beside them it
+  // reads without having to scroll past everything else first.
   return (
-    <>
-      <ol className="timeline">
-        {site.roles.map((role) => (
-          <li key={`${role.org}-${role.period}`} className="role">
-            <div className="role__head">
-              <h3 className="role__title">{role.title}</h3>
-              <span className="role__period">{role.period}</span>
-            </div>
-            <p className="role__org">
-              {role.org} · {role.location}
-            </p>
-            <ul className="role__points">
-              {role.points.map((point) => (
-                <li key={point.slice(0, 32)}>{point}</li>
-              ))}
-            </ul>
-          </li>
-        ))}
-      </ol>
+    <div className="experience">
+      <div className="experience__roles">
+        <ol className="timeline">
+          {site.roles.map((role) => (
+            <li key={`${role.org}-${role.period}`} className="role">
+              <div className="role__head">
+                <h3 className="role__title">{role.title}</h3>
+                <span className="role__period">{role.period}</span>
+              </div>
+              <p className="role__org">
+                {role.org} · {role.location}
+              </p>
+              <ul className="role__points">
+                {role.points.map((point) => (
+                  <li key={point.slice(0, 32)}>{point}</li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ol>
+      </div>
 
-      <h3 className="subheading">Education</h3>
-      <ul className="education">
-        {site.education.map((entry) => (
-          <li key={entry.degree}>
-            <span className="education__degree">{entry.degree}</span>
-            <span className="education__org">{entry.org}</span>
-            <span className="education__period">{entry.period}</span>
-          </li>
-        ))}
-      </ul>
-    </>
+      <div className="experience__education">
+        <h3 className="subheading">Education</h3>
+        <ul className="education">
+          {site.education.map((entry) => (
+            <li key={entry.degree}>
+              <span className="education__degree">{entry.degree}</span>
+              <span className="education__org">{entry.org}</span>
+              <span className="education__period">{entry.period}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   )
 }
 

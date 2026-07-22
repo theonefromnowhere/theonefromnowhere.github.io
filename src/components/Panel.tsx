@@ -4,6 +4,12 @@ type PanelProps = {
   children: ReactNode
   /** 'hub' centres it; 'section' pins it to the left of wide viewports. */
   variant: 'hub' | 'section'
+  /**
+   * Which section is showing, surfaced as `data-section` so panels.css can
+   * size an individual one — Experience carries the most content and needs
+   * more width than the rest.
+   */
+  section?: string
   className?: string
 }
 
@@ -16,12 +22,13 @@ type PanelProps = {
  * along the flight path.
  */
 export const Panel = forwardRef<HTMLDivElement, PanelProps>(function Panel(
-  { children, variant, className },
+  { children, variant, section, className },
   ref,
 ) {
   return (
     <div
       ref={ref}
+      data-section={section}
       className={['panel', `panel--${variant}`, className].filter(Boolean).join(' ')}
     >
       <div className="panel__scroll">{children}</div>
