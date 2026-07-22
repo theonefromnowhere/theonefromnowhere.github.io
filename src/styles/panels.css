@@ -98,7 +98,9 @@
 
 @media (min-width: 1200px) {
   .experience {
-    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    /* Roles get the lion's share: they are the long column, and every extra
+       pixel of width is a bullet line that no longer wraps. */
+    grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr);
     gap: clamp(1.5rem, 3vw, 2.75rem);
     align-items: start;
   }
@@ -332,7 +334,7 @@
 /* ---------- experience ---------- */
 .timeline {
   display: grid;
-  gap: 1.75rem;
+  gap: 1.35rem;
   padding: 0;
   list-style: none;
 }
@@ -364,12 +366,15 @@
 }
 
 .role__points {
-  margin-block-start: 0.6rem;
+  margin-block-start: 0.5rem;
   padding-inline-start: 1.1rem;
   display: grid;
-  gap: 0.4rem;
+  gap: 0.3rem;
   color: var(--text-dim);
   font-size: var(--step--1);
+  /* Tighter than the body default: this is the densest text on the site and
+     the leading is what decides whether the column fits. */
+  line-height: 1.48;
 }
 
 .role__points li::marker {

@@ -279,6 +279,7 @@ export const site = {
     // Taken from this repository's own remote — confirm it is the account you
     // want linked if you keep work under a second one.
     { label: 'GitHub', href: 'https://github.com/theonefromnowhere' },
+    { label: 'Aquila GitLab', href: 'https://git.aquila-consortium.org/strusov' },
     { label: 'INSPIRE-HEP', href: 'https://inspirehep.net/authors/2690316' },
     { label: 'ORCID', href: 'https://orcid.org/0000-0002-2414-6720' },
   ] satisfies Link[],
