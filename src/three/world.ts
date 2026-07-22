@@ -33,7 +33,10 @@ export type LandmarkKind =
 export type Station = {
   id: Route
   position: THREE.Vector3
-  look: THREE.Vector3
+  /** The point on the landmark the camera is nominally aimed at. */
+  aimPoint: THREE.Vector3
+  /** See StationSpec.offsetFraction. */
+  offsetFraction: number
   landmark: {
     kind: LandmarkKind
     position: THREE.Vector3
@@ -53,18 +56,17 @@ type StationSpec = {
   /** How far above the landmark base the camera aims. */
   aim: number
   /**
-   * Screen-space push, in world units, applied at the landmark's distance.
+   * How far right of centre the landmark sits, as a fraction of half the
+   * frame width. 0 is centred, 1 is the right edge.
    *
-   * As a fraction of the half-width of frame — roughly `distance * 0.89` at a
-   * 58° vertical field on a wide viewport — this is how far right of centre
-   * the landmark lands. Sections sit near 0.47 and the centred entry panel
-   * near 0.73.
-   *
-   * Note this scales with distance: moving a camera back shrinks the landmark
-   * *and* shrinks the screen-space effect of a given offset, so pulling back
-   * without raising the offset quietly drags the landmark back toward centre.
+   * Deliberately a *fraction*, not a world-space distance. The camera's field
+   * of view is vertical, so the horizontal extent of the frame grows with the
+   * aspect ratio: a fixed world-space offset drifts back toward the centre on
+   * wide displays and slides under the panel. `lookTargetFor` resolves this
+   * against the live aspect ratio every frame, so the landmark holds its place
+   * on screen at any window shape.
    */
-  offset: number
+  offsetFraction: number
   kind: LandmarkKind
   scale: number
   color: string
@@ -78,7 +80,7 @@ const SPECS: Record<Route, StationSpec> = {
     altitude: 15,
     aim: 7,
     // The entry panel is centred, so the beacon has to clear its right edge.
-    offset: 22,
+    offsetFraction: 0.72,
     kind: 'beacon',
     scale: 1,
     color: '#f2c6e0',
@@ -89,7 +91,7 @@ const SPECS: Record<Route, StationSpec> = {
     camera: [-26, -36],
     altitude: 16,
     aim: 12,
-    offset: 18,
+    offsetFraction: 0.55,
     kind: 'profile',
     scale: 1,
     color: '#9fb6ff',
@@ -100,7 +102,7 @@ const SPECS: Record<Route, StationSpec> = {
     camera: [37, -21],
     altitude: 15,
     aim: 11,
-    offset: 18,
+    offsetFraction: 0.55,
     kind: 'hammer',
     scale: 1,
     color: '#ffc39b',
@@ -111,7 +113,7 @@ const SPECS: Record<Route, StationSpec> = {
     camera: [-28, 31],
     altitude: 21,
     aim: 17,
-    offset: 19,
+    offsetFraction: 0.55,
     kind: 'galaxy',
     scale: 1,
     color: '#d8c6ff',
@@ -122,7 +124,7 @@ const SPECS: Record<Route, StationSpec> = {
     camera: [28, -33],
     altitude: 16,
     aim: 12,
-    offset: 18,
+    offsetFraction: 0.55,
     kind: 'at',
     scale: 1,
     color: '#a8ffe8',
@@ -148,16 +150,11 @@ function build(id: Route, spec: StationSpec): Station {
 
   const aimPoint = landmarkPosition.clone().setY(landmarkPosition.y + spec.aim)
 
-  // Push the aim point left along the camera's right vector, which swings the
-  // landmark to the right of frame.
-  const forward = aimPoint.clone().sub(position).normalize()
-  const right = forward.clone().cross(UP).normalize()
-  const look = aimPoint.clone().addScaledVector(right, -spec.offset)
-
   return {
     id,
     position,
-    look,
+    aimPoint,
+    offsetFraction: spec.offsetFraction,
     landmark: {
       kind: spec.kind,
       position: landmarkPosition,
@@ -174,3 +171,39 @@ export const stations = Object.fromEntries(
 
 export const allStations = Object.values(stations)
 
+
+const _forward = new THREE.Vector3()
+const _right = new THREE.Vector3()
+
+/**
+ * Where the camera should aim so the station's landmark lands at its intended
+ * fraction of the frame.
+ *
+ * Aiming *beside* the landmark is what pushes it off-centre. The sideways step
+ * is computed from the distance, the vertical field of view and the aspect
+ * ratio, so it holds the landmark at the same place on screen whatever shape
+ * the window is — which a fixed world-space offset cannot do.
+ */
+export function lookTargetFor(
+  station: Station,
+  cameraPosition: THREE.Vector3,
+  fovDegrees: number,
+  aspect: number,
+  out: THREE.Vector3,
+): THREE.Vector3 {
+  out.copy(station.aimPoint)
+
+  _forward.copy(station.aimPoint).sub(cameraPosition)
+  const distance = _forward.length()
+  if (distance < 1e-4) return out
+  _forward.divideScalar(distance)
+
+  _right.copy(_forward).cross(UP)
+  // Degenerate when looking straight down; leave the aim centred rather than
+  // producing a NaN that would black out the whole scene.
+  if (_right.lengthSq() < 1e-8) return out
+  _right.normalize()
+
+  const halfWidth = distance * Math.tan(THREE.MathUtils.degToRad(fovDegrees) / 2) * aspect
+  return out.addScaledVector(_right, -station.offsetFraction * halfWidth)
+}

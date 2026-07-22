@@ -9,7 +9,7 @@ import { supportsWebGL } from '../lib/supportsWebGL'
 import { useReducedMotion } from '../lib/useReducedMotion'
 import { FOG_COLOR } from './ps1'
 import { Scene } from './Scene'
-import { stations } from './world'
+import { lookTargetFor, stations } from './world'
 
 /**
  * Stops the render loop when nothing can be seen — a backgrounded tab. Without
@@ -86,7 +86,15 @@ export function SceneCanvas({ route }: { route: Route }) {
           gl.setClearColor(new THREE.Color(FOG_COLOR), 1)
           gl.toneMapping = THREE.ACESFilmicToneMapping
           gl.toneMappingExposure = 1.15
-          camera.lookAt(stations.home.look)
+          camera.lookAt(
+            lookTargetFor(
+              stations.home,
+              camera.position,
+              (camera as THREE.PerspectiveCamera).fov,
+              (camera as THREE.PerspectiveCamera).aspect,
+              new THREE.Vector3(),
+            ),
+          )
         }}
       >
         <Suspense fallback={null}>

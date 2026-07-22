@@ -5,7 +5,7 @@ import type { Route } from '../lib/navigation'
 import { pointer } from '../lib/pointer'
 import { setTraveling, travel } from '../lib/travel'
 import { groundOrSea } from './terrain'
-import { stations } from './world'
+import { lookTargetFor, stations } from './world'
 
 /** Exponential-decay rate for the flight. Higher is snappier. */
 const TRAVEL_LAMBDA = 1.9
@@ -68,18 +68,25 @@ type CameraRigProps = {
  * from the station and the arrival test would never settle.
  */
 export function CameraRig({ route, animate }: CameraRigProps) {
-  const { camera, invalidate } = useThree()
+  const { invalidate } = useThree()
+  // The default camera is always the perspective one configured in
+  // SceneCanvas; the store types it as the union of both kinds.
+  const camera = useThree((state) => state.camera) as THREE.PerspectiveCamera
 
   const base = useRef(new THREE.Vector3().copy(stations.home.position))
   const parallax = useRef(new THREE.Vector3())
-  const currentLook = useRef(new THREE.Vector3().copy(stations.home.look))
+  const currentLook = useRef(new THREE.Vector3().copy(stations.home.aimPoint))
   const arrivalThreshold = useRef(ARRIVAL_FLOOR)
   const departureDistance = useRef(1)
   const arcHeight = useRef(0)
   const arc = useRef(0)
 
   const scratch = useMemo(
-    () => ({ desiredParallax: new THREE.Vector3(), heading: new THREE.Vector3() }),
+    () => ({
+      desiredParallax: new THREE.Vector3(),
+      heading: new THREE.Vector3(),
+      look: new THREE.Vector3(),
+    }),
     [],
   )
 
@@ -91,7 +98,7 @@ export function CameraRig({ route, animate }: CameraRigProps) {
       base.current.copy(target.position)
       parallax.current.set(0, 0, 0)
       arc.current = 0
-      currentLook.current.copy(target.look)
+      lookTargetFor(target, target.position, camera.fov, camera.aspect, currentLook.current)
       camera.position.copy(target.position)
       camera.lookAt(currentLook.current)
       travel.progress = 1
@@ -141,9 +148,18 @@ export function CameraRig({ route, animate }: CameraRigProps) {
 
     // 2. The aim: damped too, otherwise the camera swings to face the
     //    destination on the first frame and the flight reads as a whip pan.
-    currentLook.current.x = THREE.MathUtils.damp(currentLook.current.x, target.look.x, TRAVEL_LAMBDA, dt)
-    currentLook.current.y = THREE.MathUtils.damp(currentLook.current.y, target.look.y, TRAVEL_LAMBDA, dt)
-    currentLook.current.z = THREE.MathUtils.damp(currentLook.current.z, target.look.z, TRAVEL_LAMBDA, dt)
+    // Resolved every frame rather than baked into the station, so the aim
+    // tracks the aspect ratio as the window is resized.
+    const desiredLook = lookTargetFor(
+      target,
+      base.current,
+      camera.fov,
+      camera.aspect,
+      scratch.look,
+    )
+    currentLook.current.x = THREE.MathUtils.damp(currentLook.current.x, desiredLook.x, TRAVEL_LAMBDA, dt)
+    currentLook.current.y = THREE.MathUtils.damp(currentLook.current.y, desiredLook.y, TRAVEL_LAMBDA, dt)
+    currentLook.current.z = THREE.MathUtils.damp(currentLook.current.z, desiredLook.z, TRAVEL_LAMBDA, dt)
 
     // 3. The parallax: an independent offset, so it never perturbs the flight.
     const desired = scratch.desiredParallax.set(

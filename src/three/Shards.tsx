@@ -2,6 +2,7 @@ import { useFrame } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { groundOrSea, TERRAIN_CENTER, TERRAIN_SIZE } from './terrain'
+import { allStations } from './world'
 
 /**
  * Rocks adrift above the landscape. One InstancedMesh, so the whole field is a
@@ -20,6 +21,36 @@ type Seed = {
   scale: number
 }
 
+/**
+ * Radius of the clear tube kept along each station's line of sight. Generous,
+ * because the rocks bob and slowly drift, so anything merely *near* the line
+ * will wander onto it.
+ */
+const SIGHTLINE_RADIUS = 14
+/** Carry the tube past the landmark, so nothing sits directly behind it. */
+const SIGHTLINE_OVERSHOOT = 1.35
+
+const _segment = new THREE.Vector3()
+const _toPoint = new THREE.Vector3()
+
+/** Perpendicular distance from a point to a station's camera-to-landmark line. */
+function blocksASightline(point: THREE.Vector3): boolean {
+  for (const station of allStations) {
+    _segment.copy(station.aimPoint).sub(station.position).multiplyScalar(SIGHTLINE_OVERSHOOT)
+    const lengthSq = _segment.lengthSq()
+    if (lengthSq < 1e-6) continue
+
+    _toPoint.copy(point).sub(station.position)
+    // Projection parameter along the segment, clamped to its ends.
+    const t = Math.min(1, Math.max(0, _toPoint.dot(_segment) / lengthSq))
+
+    _segment.multiplyScalar(t).add(station.position)
+    if (point.distanceTo(_segment) < SIGHTLINE_RADIUS) return true
+  }
+
+  return false
+}
+
 export function Shards({ count, animate }: { count: number; animate: boolean }) {
   const mesh = useRef<THREE.InstancedMesh>(null)
 
@@ -34,15 +65,25 @@ export function Shards({ count, animate }: { count: number; animate: boolean }) 
 
     const half = (TERRAIN_SIZE * 0.85) / 2
     const list: Seed[] = []
+    const candidate = new THREE.Vector3()
 
-    for (let i = 0; i < count; i++) {
+    let attempts = 0
+    while (list.length < count && attempts < count * 60) {
+      attempts++
+
       const x = TERRAIN_CENTER.x + (random() * 2 - 1) * half
       const z = TERRAIN_CENTER.z + (random() * 2 - 1) * half
       // Float well above whatever is underneath, so nothing intersects a peak.
       const y = groundOrSea(x, z) + 6 + random() * 34
 
+      // Keep the sightlines clear. A rock drifting between a station camera and
+      // its landmark is right in the middle of the shot, and at these distances
+      // even a small one covers a lot of it.
+      candidate.set(x, y, z)
+      if (blocksASightline(candidate)) continue
+
       list.push({
-        base: new THREE.Vector3(x, y, z),
+        base: candidate.clone(),
         axis: new THREE.Vector3(random() - 0.5, random() - 0.5, random() - 0.5).normalize(),
         phase: random() * Math.PI * 2,
         speed: 0.08 + random() * 0.18,
@@ -115,9 +156,12 @@ export function Shards({ count, animate }: { count: number; animate: boolean }) 
   })
 
   return (
+    // Sized to the seeds actually accepted, not the requested count: rejected
+    // candidates would otherwise leave surplus instances sitting at the world
+    // origin with identity matrices.
     <instancedMesh
       ref={mesh}
-      args={[geometry, material, count]}
+      args={[geometry, material, Math.max(seeds.length, 1)]}
       frustumCulled={false}
     />
   )
