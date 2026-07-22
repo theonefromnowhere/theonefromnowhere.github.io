@@ -211,16 +211,19 @@ export function Islands({ animate }: { animate: boolean }) {
             <Waterfall
               key={j}
               seed={island.seed + j * 37}
-              // Just inside the rim, starting up under the keel.
+              // On the lip. The island's profile puts the rim at local y = 0
+              // with the grass cap above it and the keel tapering in below, so
+              // this spills over the edge and falls clear of the rock — rather
+              // than starting inside the keel, under the middle of the island.
               position={[
-                Math.cos(fall.angle) * island.radius * 0.62,
-                -island.depth * 0.35,
-                Math.sin(fall.angle) * island.radius * 0.62,
+                Math.cos(fall.angle) * island.radius * 0.92,
+                0,
+                Math.sin(fall.angle) * island.radius * 0.92,
               ]}
               width={fall.width}
               // Down to roughly sea level. It has faded to nothing well before
               // then, so this only has to be about right.
-              length={Math.max(placements[i].y - island.depth * 0.35 - 1, 8)}
+              length={Math.max(placements[i].y - 1, 8)}
               animate={animate}
             />
           ))}

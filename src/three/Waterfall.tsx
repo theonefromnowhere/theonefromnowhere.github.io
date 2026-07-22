@@ -49,10 +49,13 @@ function buildWaterfallGeometry({
     const halfWidth = (width * 0.5) * taper
     const u = col / columns - 0.5
 
+    // The wander is scaled by `t` so it is zero at the top: the head of the
+    // fall has to stay exactly where it was placed on the rim, or it drifts
+    // off the lip and appears to pour out of thin air.
     return new THREE.Vector3(
-      u * 2 * halfWidth + wobbleX(t),
+      u * 2 * halfWidth + wobbleX(t) * t,
       -t * length,
-      wobbleZ(t) + u * halfWidth * 0.25,
+      wobbleZ(t) * t + u * halfWidth * 0.25,
     )
   }
 
