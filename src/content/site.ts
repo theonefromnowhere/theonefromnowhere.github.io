@@ -31,7 +31,13 @@ export type Role = {
 
 export type Publication = {
   title: string
-  venue: string
+  /**
+   * The journal citation — volume, year and article/page. This is the date of
+   * record, not the arXiv posting: every one of these appeared in press a year
+   * or more after the preprint, so the two differ throughout.
+   */
+  reference: string
+  /** Journal volume year, for sorting and for the summary line. */
   year: string
   arxiv: string
   citations: number
@@ -89,7 +95,7 @@ export const site = {
     body: [
       'I am a postdoctoral astrophysics researcher at the Institut ' +
         "d'Astrophysique de Paris, with a PhD in cosmology from Sorbonne " +
-        'University. I work primarility on large-scale structure analsysis,' +
+        'University. I work primarily on large-scale structure analsysis,' +
         ' preparing the statistical and machine-learning tools and methods for '+ 
         'the next generation of galaxy surveys (DESI, Euclid, etc).',
       'In practice that means lots of inference pipelines, working with large data,  hybrid 3D architectures (U-Net + FNO) in ' +
