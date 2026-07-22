@@ -67,7 +67,7 @@
   place-self: center start;
   width: min(38rem, 100%);
   max-height: 100%;
-  margin-inline-start: clamp(0rem, (100vw - 68rem) * 0.4, 12vw);
+  margin-inline-start: clamp(0rem, (100vw - 68rem) * 0.55, 16vw);
 }
 
 /* Narrow screens: the panel spans the width, so there is no "beside the

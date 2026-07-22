@@ -57,9 +57,12 @@ type StationSpec = {
    *
    * As a fraction of the half-width of frame — roughly `distance * 0.89` at a
    * 58° vertical field on a wide viewport — this is how far right of centre
-   * the landmark lands. Section panels occupy the left of the screen, so ~0.3
-   * puts the landmark comfortably clear of them; the centred entry panel needs
-   * closer to 0.75.
+   * the landmark lands. Sections sit near 0.47 and the centred entry panel
+   * near 0.73.
+   *
+   * Note this scales with distance: moving a camera back shrinks the landmark
+   * *and* shrinks the screen-space effect of a given offset, so pulling back
+   * without raising the offset quietly drags the landmark back toward centre.
    */
   offset: number
   kind: LandmarkKind
@@ -71,11 +74,11 @@ type StationSpec = {
 const SPECS: Record<Route, StationSpec> = {
   home: {
     at: [0, -26],
-    camera: [0, 26],
-    altitude: 13,
-    aim: 6,
+    camera: [0, 34],
+    altitude: 15,
+    aim: 7,
     // The entry panel is centred, so the beacon has to clear its right edge.
-    offset: 17,
+    offset: 22,
     kind: 'beacon',
     scale: 1,
     color: '#f2c6e0',
@@ -83,10 +86,10 @@ const SPECS: Record<Route, StationSpec> = {
   },
   about: {
     at: [-34, -30],
-    camera: [-18, -25],
-    altitude: 14,
+    camera: [-26, -36],
+    altitude: 16,
     aim: 12,
-    offset: 9,
+    offset: 18,
     kind: 'profile',
     scale: 1,
     color: '#9fb6ff',
@@ -94,10 +97,10 @@ const SPECS: Record<Route, StationSpec> = {
   },
   experience: {
     at: [30, -48],
-    camera: [26, -15],
-    altitude: 13,
+    camera: [37, -21],
+    altitude: 15,
     aim: 11,
-    offset: 9,
+    offset: 18,
     kind: 'hammer',
     scale: 1,
     color: '#ffc39b',
@@ -105,10 +108,10 @@ const SPECS: Record<Route, StationSpec> = {
   },
   publications: {
     at: [-22, -70],
-    camera: [-20, 22],
-    altitude: 19,
+    camera: [-28, 31],
+    altitude: 21,
     aim: 17,
-    offset: 9.5,
+    offset: 19,
     kind: 'galaxy',
     scale: 1,
     color: '#d8c6ff',
@@ -116,10 +119,10 @@ const SPECS: Record<Route, StationSpec> = {
   },
   contact: {
     at: [30, -104],
-    camera: [20, -23],
-    altitude: 14,
+    camera: [28, -33],
+    altitude: 16,
     aim: 12,
-    offset: 9,
+    offset: 18,
     kind: 'at',
     scale: 1,
     color: '#a8ffe8',
