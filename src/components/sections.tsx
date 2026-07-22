@@ -77,7 +77,7 @@ function Publications() {
     <>
       <p className="meta">
         {site.publications.length} papers · {total.toLocaleString('en-US')} citations ·
-        snapshot from INSPIRE-HEP
+        by date of journal publication · snapshot from INSPIRE-HEP
       </p>
 
       <ul className="papers">
@@ -94,9 +94,7 @@ function Publications() {
                 {publication.collaboration && (
                   <span className="badge">{publication.collaboration}</span>
                 )}
-                <span>
-                  {publication.venue} · {publication.year}
-                </span>
+                <span>{publication.reference}</span>
                 <span className="paper__cites">{publication.citations} citations</span>
                 <span className="paper__arxiv">arXiv:{publication.arxiv}</span>
               </span>

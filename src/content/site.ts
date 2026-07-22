@@ -200,64 +200,67 @@ export const site = {
     },
   ],
 
-  /* Citation counts are a snapshot from INSPIRE-HEP (2026-07-22) — they only
-     ever go up, so refresh them when you next touch this file. */
+  /* References and citation counts are a snapshot from INSPIRE-HEP
+     (2026-07-22). Listed newest first by date of publication in the journal,
+     which is not the arXiv order — the DESI IV preprint predates the DESI II
+     one, but reached press six months later. Counts only ever go up, so
+     refresh them when you next touch this file. */
   publications: [
     {
       title:
         'DESI 2024 II: sample definitions, characteristics, and two-point clustering statistics',
-      venue: 'JCAP',
-      year: '2024',
+      reference: 'JCAP 07 (2025) 017',
+      year: '2025',
       arxiv: '2411.12020',
       citations: 138,
       collaboration: 'DESI',
     },
     {
-      title: 'DESI 2024 VI: cosmological constraints from the measurements of BAO',
-      venue: 'JCAP',
-      year: '2024',
-      arxiv: '2404.03002',
-      citations: 1980,
-      collaboration: 'DESI',
-    },
-    {
       title: 'DESI 2024 III: baryon acoustic oscillations from galaxies and quasars',
-      venue: 'JCAP',
-      year: '2024',
+      reference: 'JCAP 04 (2025) 012',
+      year: '2025',
       arxiv: '2404.03000',
       citations: 555,
       collaboration: 'DESI',
     },
     {
+      title:
+        'Neural network-based model of galaxy power spectrum: fast full-shape galaxy power spectrum analysis',
+      reference: 'MNRAS 538 (2025) 1789',
+      year: '2025',
+      arxiv: '2403.20093',
+      citations: 6,
+    },
+    {
+      title: 'DESI 2024 VI: cosmological constraints from the measurements of BAO',
+      reference: 'JCAP 02 (2025) 021',
+      year: '2025',
+      arxiv: '2404.03002',
+      citations: 1980,
+      collaboration: 'DESI',
+    },
+    {
       title: 'DESI 2024 IV: Baryon Acoustic Oscillations from the Lyman-α forest',
-      venue: 'JCAP',
-      year: '2024',
+      reference: 'JCAP 01 (2025) 124',
+      year: '2025',
       arxiv: '2404.03001',
       citations: 399,
       collaboration: 'DESI',
     },
     {
       title:
-        'Neural network-based model of galaxy power spectrum: fast full-shape galaxy power spectrum analysis',
-      venue: 'MNRAS',
+        'The Uchuu–SDSS galaxy light-cones: clustering, redshift space distortion and BAO signal',
+      reference: 'MNRAS 528 (2024) 7236',
       year: '2024',
-      arxiv: '2403.20093',
-      citations: 6,
+      arxiv: '2208.00540',
+      citations: 28,
     },
     {
       title: 'The two-point correlation function covariance with fewer mocks',
-      venue: 'MNRAS',
-      year: '2023',
+      reference: 'MNRAS 527 (2024) 9048',
+      year: '2024',
       arxiv: '2306.16332',
       citations: 13,
-    },
-    {
-      title:
-        'The Uchuu–SDSS galaxy light-cones: clustering, redshift space distortion and BAO signal',
-      venue: 'MNRAS',
-      year: '2022',
-      arxiv: '2208.00540',
-      citations: 28,
     },
   ] satisfies Publication[],
 
@@ -269,10 +272,15 @@ export const site = {
 
   links: [
     { label: 'Email', href: 'mailto:trusov.s.k@gmail.com' },
+    {
+      label: 'LinkedIn',
+      href: 'https://www.linkedin.com/in/svyatoslav-trusov-a8a423257/',
+    },
+    // Taken from this repository's own remote — confirm it is the account you
+    // want linked if you keep work under a second one.
+    { label: 'GitHub', href: 'https://github.com/theonefromnowhere' },
     { label: 'INSPIRE-HEP', href: 'https://inspirehep.net/authors/2690316' },
     { label: 'ORCID', href: 'https://orcid.org/0000-0002-2414-6720' },
-    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/' }, // TODO: full profile URL
-    { label: 'GitHub', href: 'https://github.com/' }, // TODO: full profile URL
   ] satisfies Link[],
 } as const
 
