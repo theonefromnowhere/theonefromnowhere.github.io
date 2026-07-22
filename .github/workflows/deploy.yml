@@ -1,0 +1,69 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a newer push cancel an in-flight deploy, but never interrupt one that has
+# already started publishing.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # A user site (<owner>.github.io) is served from /, a project repo from
+      # /<repo>/. Deriving it here means the base path is never wrong after a
+      # rename, and the echo puts the answer in the build log — a wrong base
+      # path fails as 404s on every asset, which is otherwise a puzzle.
+      #
+      # GITHUB_REPOSITORY is always set, and the comparison is case-folded
+      # because GitHub preserves the case of owner names but treats them
+      # case-insensitively.
+      - name: Build
+        run: |
+          owner="${GITHUB_REPOSITORY%%/*}"
+          repo="${GITHUB_REPOSITORY#*/}"
+          if [ "$(echo "$repo" | tr '[:upper:]' '[:lower:]')" = "$(echo "$owner" | tr '[:upper:]' '[:lower:]').github.io" ]; then
+            export BASE_PATH=/
+          else
+            export BASE_PATH="/$repo/"
+          fi
+          echo "Building with BASE_PATH=$BASE_PATH"
+          npm run build
+
+      # enablement turns Pages on and points it at Actions if it is not already
+      # configured, so the first run does not fail on a setting nobody flipped.
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
