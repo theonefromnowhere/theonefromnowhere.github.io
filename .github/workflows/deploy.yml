@@ -27,7 +27,16 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm ci
+      # `npm install`, not `npm ci`, deliberately.
+      #
+      # rolldown (via Vite 8) pulls platform-specific native bindings whose own
+      # optional dependencies npm records inconsistently across npm versions:
+      # a lockfile written by npm 11.6 locally resolves @emnapi/core 1.11.1,
+      # while the runner's npm builds an ideal tree wanting 1.11.2 and `npm ci`
+      # aborts on the mismatch. `npm install` resolves against the lockfile when
+      # it is in sync and repairs it when it is not, so the build cannot fail
+      # this way. The lockfile stays committed for local reproducibility.
+      - run: npm install --no-audit --no-fund
 
       # A user site (<owner>.github.io) is served from /, a project repo from
       # /<repo>/. Deriving it here means the base path is never wrong after a
