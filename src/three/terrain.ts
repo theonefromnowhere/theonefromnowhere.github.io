@@ -50,6 +50,29 @@ export function groundOrSea(x: number, z: number): number {
 }
 
 /**
+ * Height of the sea surface at a world position and time.
+ *
+ * This duplicates, in JavaScript, the two sines the sea's vertex shader adds
+ * (see `patchWaves` in ps1.ts). It exists so that anything floating — the
+ * ships — rides the same water the shader draws. **The frequencies, speeds and
+ * amplitude below must stay in step with that shader**, or boats will bob out
+ * of phase with the waves under them.
+ *
+ * The sea is a plane authored in XY and rotated by -90° about X, which maps
+ * local (x, y) to world (x, -z) relative to the terrain centre — hence the
+ * negated Z.
+ */
+export const SEA_WAVE_AMPLITUDE = 0.45
+
+export function seaHeightAt(x: number, z: number, time: number): number {
+  const localX = x - TERRAIN_CENTER.x
+  const localY = -(z - TERRAIN_CENTER.z)
+  const wave =
+    Math.sin(localX * 0.08 + time * 0.7) + Math.sin(localY * 0.11 - time * 0.55)
+  return SEA_LEVEL + wave * SEA_WAVE_AMPLITUDE
+}
+
+/**
  * The palette. A green dream coast under a violet dusk: teal shallows through
  * moss and meadow, turning violet only at the peaks where the sky reaches them.
  * Deliberately few, saturated steps — a smooth gradient would lose the era.

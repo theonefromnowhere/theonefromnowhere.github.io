@@ -3,6 +3,8 @@ export type Quality = {
   terrainSegments: number
   /** Floating rocks. */
   shards: number
+  /** Sailing boats on the sea. */
+  ships: number
   /** Bloom and vignette — the dreamy half of the look, but not free. */
   postprocessing: boolean
   /**
@@ -16,6 +18,7 @@ export type Quality = {
 const HIGH: Quality = {
   terrainSegments: 118,
   shards: 150,
+  ships: 9,
   postprocessing: true,
   renderScale: 0.45,
 }
@@ -23,6 +26,7 @@ const HIGH: Quality = {
 const LOW: Quality = {
   terrainSegments: 78,
   shards: 60,
+  ships: 4,
   postprocessing: false,
   renderScale: 0.45,
 }

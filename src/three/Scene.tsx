@@ -5,6 +5,8 @@ import { Islands } from './Islands'
 import { Landmark } from './Landmark'
 import { FOG_COLOR, FOG_FAR, FOG_NEAR } from './ps1'
 import { Shards } from './Shards'
+import { Ships } from './Ships'
+import { Village } from './Village'
 import { Sky } from './Sky'
 import { Sea, Terrain } from './TerrainMesh'
 import { allStations } from './world'
@@ -35,6 +37,8 @@ export function Scene({ route, quality, animate }: SceneProps) {
 
       <Terrain segments={quality.terrainSegments} />
       <Sea />
+      <Village animate={animate} />
+      <Ships count={quality.ships} animate={animate} />
       <Islands animate={animate} />
       <Shards count={quality.shards} animate={animate} />
 

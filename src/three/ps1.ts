@@ -48,6 +48,9 @@ export function patchWaves(
     // The plane is authored in XY and rotated into place, so its local +Z is
     // up. Deliberately long wavelengths — this is a dream sea, not a
     // simulation.
+    //
+    // `seaHeightAt` in terrain.ts mirrors these two sines so that floating
+    // objects ride the water. Change the numbers here and change them there.
     shader.vertexShader = shader.vertexShader.replace(
       '#include <begin_vertex>',
       `#include <begin_vertex>
