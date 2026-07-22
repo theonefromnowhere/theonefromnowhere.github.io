@@ -23,19 +23,24 @@ const MIN_ELEVATION = 1.5
 const MAX_ELEVATION = 9
 /** Stay out from under the stations, so the camera never clips a roof. */
 const MIN_STATION_DISTANCE = 22
+/** And away from the landmarks, which own their own patch of ground. */
+const MIN_LANDMARK_DISTANCE = 26
 
 type Site = { x: number; z: number; y: number }
 
-/** Mean absolute height difference to the four neighbours — lower is flatter. */
-function roughness(x: number, z: number, reach = 3): number {
-  const here = terrainHeight(x, z)
-  return (
-    (Math.abs(terrainHeight(x + reach, z) - here) +
-      Math.abs(terrainHeight(x - reach, z) - here) +
-      Math.abs(terrainHeight(x, z + reach) - here) +
-      Math.abs(terrainHeight(x, z - reach) - here)) /
-    4
-  )
+/**
+ * How uneven the ground is across the village's actual footprint.
+ *
+ * Measured at the house positions rather than at a single point with four
+ * neighbours: a spot can look flat locally and still drop several units across
+ * the width of the cluster, which is what leaves cottages stepping down a
+ * hillside.
+ */
+function footprintUnevenness(x: number, z: number): number {
+  const heights = HOUSES.map((h) => terrainHeight(x + h.offsetX, z + h.offsetZ))
+  heights.push(terrainHeight(x, z))
+  const mean = heights.reduce((a, b) => a + b, 0) / heights.length
+  return heights.reduce((a, b) => a + Math.abs(b - mean), 0) / heights.length
 }
 
 function findVillageSite(): Site {
@@ -49,16 +54,20 @@ function findVillageSite(): Site {
       const y = terrainHeight(x, z)
 
       if (y < MIN_ELEVATION || y > MAX_ELEVATION) continue
-      if (
-        allStations.some(
-          (s) => (s.position.x - x) ** 2 + (s.position.z - z) ** 2 < MIN_STATION_DISTANCE ** 2,
-        )
-      ) {
-        continue
-      }
+
+      const tooClose = allStations.some(
+        (s) =>
+          (s.position.x - x) ** 2 + (s.position.z - z) ** 2 < MIN_STATION_DISTANCE ** 2 ||
+          (s.landmark.position.x - x) ** 2 + (s.landmark.position.z - z) ** 2 <
+            MIN_LANDMARK_DISTANCE ** 2,
+      )
+      if (tooClose) continue
+
+      // Every house must be on dry land, not just the centre.
+      if (HOUSES.some((h) => terrainHeight(x + h.offsetX, z + h.offsetZ) < 0.5)) continue
 
       // Flatness dominates; distance from the preferred spot only breaks ties.
-      const score = roughness(x, z) * 10 + Math.hypot(dx, dz) * 0.05
+      const score = footprintUnevenness(x, z) * 10 + Math.hypot(dx, dz) * 0.05
       if (score < bestScore) {
         bestScore = score
         best = { x, z, y }
@@ -67,7 +76,13 @@ function findVillageSite(): Site {
   }
 
   // Nothing suitable: fall back to the preferred point, clamped above water.
-  return best ?? { x: PREFERRED.x, z: PREFERRED.z, y: Math.max(terrainHeight(PREFERRED.x, PREFERRED.z), MIN_ELEVATION) }
+  return (
+    best ?? {
+      x: PREFERRED.x,
+      z: PREFERRED.z,
+      y: Math.max(terrainHeight(PREFERRED.x, PREFERRED.z), MIN_ELEVATION),
+    }
+  )
 }
 
 type House = {
@@ -89,7 +104,7 @@ const HOUSES: House[] = [
 ]
 
 export function Village({ animate }: { animate: boolean }) {
-  const site = useMemo(() => { const s = findVillageSite(); console.log('VILLAGE', JSON.stringify({...s, rough: roughness(s.x,s.z), houses: HOUSES.map(h=>+terrainHeight(s.x+h.offsetX, s.z+h.offsetZ).toFixed(2))})); return s }, [])
+  const site = useMemo(() => findVillageSite(), [])
   const blades = useRef<THREE.Group>(null)
   const time = useRef(0)
 

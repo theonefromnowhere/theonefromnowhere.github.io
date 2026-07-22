@@ -63,11 +63,20 @@
   max-height: 100%;
 }
 
+/* Narrow screens: the panel spans the width, so there is no "beside the
+   landmark" composition left to preserve. Align to the top rather than the
+   bottom — the heading and the back link are what you need in reach first, and
+   a bottom-aligned panel pushes them to the middle of the screen. */
 @media (max-width: 900px) {
+  .panel--hub,
   .panel--section {
-    place-self: end center;
+    place-self: start center;
     width: 100%;
-    max-height: 82%;
+    max-height: 100%;
+  }
+
+  .panel__scroll {
+    max-height: min(80svh, 46rem);
   }
 }
 

@@ -2,6 +2,7 @@ import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { seaHeightAt, terrainHeight, TERRAIN_CENTER } from './terrain'
+import { allStations } from './world'
 
 /**
  * Little sailing boats out on the water.
@@ -20,6 +21,13 @@ import { seaHeightAt, terrainHeight, TERRAIN_CENTER } from './terrain'
 const MIN_DEPTH = 3.5
 /** Boats sail near the coast, not out in the empty middle of the ocean. */
 const MAX_DISTANCE_FROM_CENTRE = 105
+/**
+ * A boat has to be near somewhere the camera actually goes, or it is detail
+ * nobody ever sees. Not too near, though — one moored under a station reads as
+ * clutter rather than as distance.
+ */
+const NEAREST_STATION_MIN = 22
+const NEAREST_STATION_MAX = 85
 
 type ShipSeed = {
   x: number
@@ -53,6 +61,12 @@ function findShipSites(count: number): ShipSeed[] {
     if (terrainHeight(x, z) > -MIN_DEPTH) continue
     if (terrainHeight(x + 4, z) > -1.5 || terrainHeight(x - 4, z) > -1.5) continue
     if (terrainHeight(x, z + 4) > -1.5 || terrainHeight(x, z - 4) > -1.5) continue
+
+    // Within sight of at least one station.
+    const nearest = Math.min(
+      ...allStations.map((s) => Math.hypot(s.position.x - x, s.position.z - z)),
+    )
+    if (nearest < NEAREST_STATION_MIN || nearest > NEAREST_STATION_MAX) continue
 
     // Keep the fleet spread out.
     if (seeds.some((s) => (s.x - x) ** 2 + (s.z - z) ** 2 < 14 ** 2)) continue
@@ -164,7 +178,7 @@ function Ship({ seed, animate }: { seed: ShipSeed; animate: boolean }) {
 }
 
 export function Ships({ count, animate }: { count: number; animate: boolean }) {
-  const seeds = useMemo(() => { const s = findShipSites(count); console.log('SHIPS', JSON.stringify(s.map(v=>({x:+v.x.toFixed(1), z:+v.z.toFixed(1), bed:+terrainHeight(v.x,v.z).toFixed(2)})))); return s }, [count])
+  const seeds = useMemo(() => findShipSites(count), [count])
 
   return (
     <group>
