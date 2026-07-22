@@ -55,12 +55,19 @@
   max-height: 100%;
 }
 
-/* Section panels sit to the left; the station's camera aims so that the
-   landmark composes into the space on the right. */
+/* Section panels sit left of centre; the station's camera aims so that the
+   landmark composes into the space on the right.
+
+   The inset pulls the panel in from the edge, but only once the viewport is
+   wide enough to spare the room — below ~68rem it resolves to zero, because
+   there the panel already fills most of the width and moving it inward would
+   push it over the landmark rather than away from it. The vw cap keeps it from
+   drifting into the middle of an ultrawide screen. */
 .panel--section {
   place-self: center start;
   width: min(38rem, 100%);
   max-height: 100%;
+  margin-inline-start: clamp(0rem, (100vw - 68rem) * 0.4, 12vw);
 }
 
 /* Narrow screens: the panel spans the width, so there is no "beside the
