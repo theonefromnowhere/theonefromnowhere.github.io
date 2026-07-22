@@ -1,6 +1,7 @@
 import type { Quality } from '../lib/quality'
 import type { Route } from '../lib/navigation'
 import { CameraRig } from './CameraRig'
+import { Birds } from './Birds'
 import { Islands } from './Islands'
 import { Landmark } from './Landmark'
 import { FOG_COLOR, FOG_FAR, FOG_NEAR } from './ps1'
@@ -39,6 +40,7 @@ export function Scene({ route, quality, animate }: SceneProps) {
       <Sea />
       <Village animate={animate} />
       <Ships count={quality.ships} animate={animate} />
+      <Birds flocks={quality.flocks} animate={animate} />
       <Islands animate={animate} />
       <Shards count={quality.shards} animate={animate} />
 

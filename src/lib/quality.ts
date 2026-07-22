@@ -5,6 +5,8 @@ export type Quality = {
   shards: number
   /** Sailing boats on the sea. */
   ships: number
+  /** Flocks of birds over the land, FLOCK_SIZE birds each. */
+  flocks: number
   /** Bloom and vignette — the dreamy half of the look, but not free. */
   postprocessing: boolean
   /**
@@ -19,6 +21,7 @@ const HIGH: Quality = {
   terrainSegments: 118,
   shards: 150,
   ships: 9,
+  flocks: 6,
   postprocessing: true,
   renderScale: 0.45,
 }
@@ -27,6 +30,7 @@ const LOW: Quality = {
   terrainSegments: 78,
   shards: 60,
   ships: 4,
+  flocks: 4,
   postprocessing: false,
   renderScale: 0.45,
 }
