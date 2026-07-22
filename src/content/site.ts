@@ -89,18 +89,17 @@ export const site = {
     body: [
       'I am a postdoctoral machine learning researcher at the Institut ' +
         "d'Astrophysique de Paris, with a PhD in cosmology from Sorbonne " +
-        'University. My work sits where deep learning meets physical ' +
-        'simulation: emulators that stand in for expensive computations ' +
-        'without giving up the accuracy the science depends on.',
-      'In practice that means hybrid 3D architectures (U-Net + FNO) in ' +
+        'University. I work primarility on large-scale structure analsysis,' +
+        ' preparing the statistical and machine-learning tools and methods for '+ 
+        'the next generation of galaxy surveys (DESI, Euclid, etc).',
+      'In practice that means lots of inference pipelines, working with large data,  hybrid 3D architectures (U-Net + FNO) in ' +
         'JAX/Flax, physics-informed losses that make small-sample training ' +
         'viable, and differentiable inference pipelines with Hamiltonian ' +
         'Monte Carlo end to end. The results have run from 64× to 300× faster ' +
         'than the pipelines they replaced, on 20× less training data.',
       'Before physics I spent six years writing C# and Unity — cross-platform ' +
         'interactive systems and AR. That is where the taste for real-time ' +
-        'graphics comes from, and why this page is a world you fly through ' +
-        'rather than a page you scroll.',
+        'graphics comes from.',
     ],
     skills: [
       {
