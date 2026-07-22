@@ -46,11 +46,11 @@ export type Link = {
 export const site = {
   name: 'Svyatoslav Trusov',
   role: 'PhD',
-  tagline: 'Machine learning scientist — neural surrogates for cosmology.',
+  tagline: 'Physicist and machine learning scientist',
   location: 'Paris, France',
   intro:
-    'I build neural surrogate models, Bayesian inference pipelines and the ' +
-    'scientific software around them — mostly in JAX and PyTorch, mostly on ' +
+    'I study large-scale structure with Bayesian inference pipelines and machine learning,' +
+    'and I build scientific software around them — mostly in JAX and PyTorch, mostly on ' +
     'HPC clusters, mostly pointed at the large-scale structure of the universe. ' +
     'Pick a direction to travel.',
 
@@ -134,7 +134,7 @@ export const site = {
 
   roles: [
     {
-      title: 'Postdoctoral Machine Learning Researcher',
+      title: 'Postdoc: Simulation Based Inference & Neural Surrogates',
       org: "Institut d'Astrophysique de Paris",
       location: 'Paris, France',
       period: '2024 — present',
@@ -147,7 +147,7 @@ export const site = {
       ],
     },
     {
-      title: 'Doctoral Researcher — Simulation-Based Inference',
+      title: 'Doctoral Researcher - DESI BGS analysis',
       org: 'Sorbonne University / LPNHE',
       location: 'Paris, France',
       period: '2021 — 2024',
