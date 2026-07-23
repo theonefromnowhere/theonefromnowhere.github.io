@@ -32,6 +32,15 @@ export function Hub() {
           ))}
         </ul>
       </nav>
+
+      {/* Not one of the sections: it leads nowhere and shows nothing, so it
+          sits outside the nav rather than pretending to be a fifth choice. */}
+      <a className="cinematic" href={routeHref('view')}>
+        <span className="cinematic__label">Enjoy the view</span>
+        <span className="cinematic__hint">
+          Hide everything and drift over the world
+        </span>
+      </a>
     </>
   )
 }

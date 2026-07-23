@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import type { Route } from '../lib/navigation'
+import type { StationRoute } from '../lib/navigation'
 import { groundOrSea } from './terrain'
 
 /**
@@ -31,7 +31,7 @@ export type LandmarkKind =
   | 'at'
 
 export type Station = {
-  id: Route
+  id: StationRoute
   position: THREE.Vector3
   /** The point on the landmark the camera is nominally aimed at. */
   aimPoint: THREE.Vector3
@@ -73,7 +73,7 @@ type StationSpec = {
   emissive: string
 }
 
-const SPECS: Record<Route, StationSpec> = {
+const SPECS: Record<StationRoute, StationSpec> = {
   home: {
     at: [0, -26],
     camera: [0, 34],
@@ -135,7 +135,7 @@ const SPECS: Record<Route, StationSpec> = {
 
 const UP = new THREE.Vector3(0, 1, 0)
 
-function build(id: Route, spec: StationSpec): Station {
+function build(id: StationRoute, spec: StationSpec): Station {
   const [lx, lz] = spec.at
   const landmarkPosition = new THREE.Vector3(lx, groundOrSea(lx, lz), lz)
 
@@ -167,8 +167,25 @@ function build(id: Route, spec: StationSpec): Station {
 }
 
 export const stations = Object.fromEntries(
-  Object.entries(SPECS).map(([id, spec]) => [id, build(id as Route, spec)]),
-) as Record<Route, Station>
+  Object.entries(SPECS).map(([id, spec]) => [id, build(id as StationRoute, spec)]),
+) as Record<StationRoute, Station>
+
+/**
+ * The path for "enjoy the view": a slow circle over the middle of the world,
+ * looking inward and slightly down.
+ *
+ * The radius is deliberately modest. Orbiting out at the rim would put the
+ * subject further away than the fog reaches (FOG_FAR is 98), and the whole
+ * thing would be a slow pan across haze.
+ */
+export const VIEW_ORBIT = {
+  centre: new THREE.Vector3(0, 0, -55),
+  lookAt: new THREE.Vector3(0, 9, -55),
+  radius: 44,
+  altitude: 33,
+  /** Radians per second — a full circuit takes a little over two minutes. */
+  speed: 0.05,
+}
 
 export const allStations = Object.values(stations)
 

@@ -496,3 +496,60 @@
   border-color: var(--accent);
   background: rgb(255 199 160 / 0.1);
 }
+
+/* ---------- enjoy the view ---------- */
+.cinematic {
+  display: grid;
+  gap: 0.15rem;
+  margin-block-start: 1.25rem;
+  padding: 0.9rem 1.15rem;
+  border: 1px dashed var(--border);
+  text-decoration: none;
+  transition:
+    border-color 200ms ease,
+    background 200ms ease;
+}
+
+.cinematic:hover,
+.cinematic:focus-visible {
+  border-color: var(--accent);
+  border-style: solid;
+  background: rgb(255 199 160 / 0.07);
+}
+
+.cinematic__label {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.cinematic:hover .cinematic__label,
+.cinematic:focus-visible .cinematic__label {
+  color: var(--accent);
+}
+
+.cinematic__hint {
+  font-size: var(--step--1);
+  color: var(--text-dim);
+}
+
+/* The whole interface in free-flight mode: one control, top left. */
+.viewmode {
+  place-self: start start;
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+
+.viewmode.is-visible {
+  opacity: 1;
+}
+
+.back--floating {
+  pointer-events: auto;
+  margin: 0;
+  padding: 0.6rem 1.05rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgb(var(--surface) / 0.72);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}

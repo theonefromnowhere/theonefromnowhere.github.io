@@ -1,7 +1,10 @@
 import { useSyncExternalStore } from 'react'
 import { sectionIds, type SectionId } from '../content/site'
 
-export type Route = 'home' | SectionId
+export type Route = 'home' | 'view' | SectionId
+
+/** Routes that correspond to a place in the world. 'view' has no station. */
+export type StationRoute = Exclude<Route, 'view'>
 
 /**
  * Hash routing, hand-rolled.
@@ -13,6 +16,7 @@ export type Route = 'home' | SectionId
 
 function parse(hash: string): Route {
   const id = hash.replace(/^#\/?/, '')
+  if (id === 'view') return 'view'
   return (sectionIds as string[]).includes(id) ? (id as SectionId) : 'home'
 }
 

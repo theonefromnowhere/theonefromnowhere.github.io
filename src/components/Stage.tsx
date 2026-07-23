@@ -27,6 +27,7 @@ export function Stage() {
 
   const panelRef = useRef<HTMLDivElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
+  const backRef = useRef<HTMLAnchorElement>(null)
 
   // Fade the outgoing panel, then swap the content underneath it.
   useEffect(() => {
@@ -46,6 +47,14 @@ export function Stage() {
   // the new heading, and keep the document title in step.
   useEffect(() => {
     if (!visible) return
+    if (displayed === 'view') {
+      document.title = `The view — ${site.name}`
+      // The only control on screen; keyboard users would otherwise be stranded
+      // on a page whose focusable content just disappeared.
+      backRef.current?.focus()
+      return
+    }
+
     const section = findSection(displayed)
     document.title = section ? `${section.title} — ${site.name}` : site.name
     headingRef.current?.focus()
@@ -53,6 +62,22 @@ export function Stage() {
 
   const section = findSection(displayed)
   const Body = section ? SECTION_BODIES[section.id] : null
+  const cinematic = displayed === 'view'
+
+  if (cinematic) {
+    return (
+      <div className="stage">
+        <div className={['viewmode', visible ? 'is-visible' : ''].join(' ')}>
+          <a className="back back--floating" href={routeHref('home')} ref={backRef}>
+            <span aria-hidden="true">←</span> Back
+          </a>
+        </div>
+        <p className="sr-only" role="status" aria-live="polite">
+          Free-flying view. Interface hidden.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="stage">

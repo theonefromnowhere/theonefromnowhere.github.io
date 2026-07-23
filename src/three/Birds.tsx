@@ -110,11 +110,7 @@ export function Birds({ flocks: flockCount, animate }: { flocks: number; animate
   const mesh = useRef<THREE.InstancedMesh>(null)
   const elapsed = useRef(0)
 
-  const flocks = useMemo(() => {
-    const f = buildFlocks(flockCount)
-    console.log('BIRDS', JSON.stringify({ asked: flockCount, got: f.length, birds: f.length * FLOCK_SIZE, highTierWouldGet: buildFlocks(6).length }))
-    return f
-  }, [flockCount])
+  const flocks = useMemo(() => buildFlocks(flockCount), [flockCount])
   const total = flocks.length * FLOCK_SIZE
 
   const geometry = useMemo(() => {

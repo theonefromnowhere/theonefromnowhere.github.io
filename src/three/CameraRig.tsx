@@ -5,7 +5,7 @@ import type { Route } from '../lib/navigation'
 import { pointer } from '../lib/pointer'
 import { setTraveling, travel } from '../lib/travel'
 import { groundOrSea } from './terrain'
-import { lookTargetFor, stations } from './world'
+import { lookTargetFor, stations, VIEW_ORBIT } from './world'
 
 /** Exponential-decay rate for the flight. Higher is snappier. */
 const TRAVEL_LAMBDA = 1.9
@@ -46,6 +46,8 @@ const MIN_CLEARANCE = 6
  * bends the path instead of stepping it.
  */
 const ARC_LAMBDA = 2.2
+/** Easing toward the cinematic orbit. Slower than a flight — it should drift. */
+const VIEW_LAMBDA = 0.9
 /** How far ahead to sample the ground, so descents clear the ridge in front. */
 const LOOKAHEAD = 9
 
@@ -80,17 +82,49 @@ export function CameraRig({ route, animate }: CameraRigProps) {
   const departureDistance = useRef(1)
   const arcHeight = useRef(0)
   const arc = useRef(0)
+  /** Elapsed time and starting angle for the cinematic orbit. */
+  const viewTime = useRef(0)
+  const viewPhase = useRef(0)
 
   const scratch = useMemo(
     () => ({
       desiredParallax: new THREE.Vector3(),
       heading: new THREE.Vector3(),
       look: new THREE.Vector3(),
+      orbit: new THREE.Vector3(),
     }),
     [],
   )
 
   useEffect(() => {
+    if (route === 'view') {
+      // Enter the orbit at whichever point is nearest the camera's current
+      // position, so switching into the mode drifts sideways into the circle
+      // rather than swinging all the way round to a fixed start.
+      viewTime.current = 0
+      viewPhase.current = Math.atan2(
+        base.current.z - VIEW_ORBIT.centre.z,
+        base.current.x - VIEW_ORBIT.centre.x,
+      )
+      travel.progress = 1
+      setTraveling(false)
+
+      if (!animate) {
+        base.current.set(
+          VIEW_ORBIT.centre.x + Math.cos(viewPhase.current) * VIEW_ORBIT.radius,
+          VIEW_ORBIT.altitude,
+          VIEW_ORBIT.centre.z + Math.sin(viewPhase.current) * VIEW_ORBIT.radius,
+        )
+        arc.current = 0
+        parallax.current.set(0, 0, 0)
+        currentLook.current.copy(VIEW_ORBIT.lookAt)
+        camera.position.copy(base.current)
+        camera.lookAt(currentLook.current)
+        invalidate()
+      }
+      return
+    }
+
     const target = stations[route]
 
     if (!animate) {
@@ -123,10 +157,78 @@ export function CameraRig({ route, animate }: CameraRigProps) {
     }
   }, [route, animate, camera, invalidate])
 
+  /**
+   * The part of the frame that is the same whether the camera is flying to a
+   * station or drifting round the cinematic orbit: ease the aim, add the
+   * pointer parallax, and hold the camera above the ground.
+   *
+   * The caller sets `scratch.heading` to the direction of travel (it is
+   * normalised here) — the ground is sampled under the camera *and* a little
+   * ahead of it, so a descent cannot clip the ridge in front.
+   */
+  const applyLook = (dt: number, desiredLook: THREE.Vector3, lambda: number) => {
+    currentLook.current.x = THREE.MathUtils.damp(currentLook.current.x, desiredLook.x, lambda, dt)
+    currentLook.current.y = THREE.MathUtils.damp(currentLook.current.y, desiredLook.y, lambda, dt)
+    currentLook.current.z = THREE.MathUtils.damp(currentLook.current.z, desiredLook.z, lambda, dt)
+
+    // An independent offset, so the pointer never perturbs the path itself.
+    const desired = scratch.desiredParallax.set(
+      pointer.x * PARALLAX_RANGE.x,
+      -pointer.y * PARALLAX_RANGE.y,
+      0,
+    )
+    parallax.current.x = THREE.MathUtils.damp(parallax.current.x, desired.x, PARALLAX_LAMBDA, dt)
+    parallax.current.y = THREE.MathUtils.damp(parallax.current.y, desired.y, PARALLAX_LAMBDA, dt)
+
+    camera.position.set(
+      base.current.x + parallax.current.x,
+      base.current.y + arc.current + parallax.current.y,
+      base.current.z,
+    )
+
+    const heading = scratch.heading
+    if (heading.lengthSq() > 1e-6) heading.normalize().multiplyScalar(LOOKAHEAD)
+
+    const clearance =
+      Math.max(
+        groundOrSea(camera.position.x, camera.position.z),
+        groundOrSea(camera.position.x + heading.x, camera.position.z + heading.z),
+      ) + MIN_CLEARANCE
+
+    if (camera.position.y < clearance) camera.position.y = clearance
+
+    camera.lookAt(currentLook.current)
+  }
+
   useFrame((_state, delta) => {
     if (!animate) return
 
     const dt = Math.min(delta, 1 / 30)
+
+    if (route === 'view') {
+      viewTime.current += dt
+      const angle = viewPhase.current + viewTime.current * VIEW_ORBIT.speed
+
+      const orbit = scratch.orbit.set(
+        VIEW_ORBIT.centre.x + Math.cos(angle) * VIEW_ORBIT.radius,
+        // A slow rise and fall, so the circuit does not read as a turntable.
+        VIEW_ORBIT.altitude + Math.sin(viewTime.current * 0.085) * 9,
+        VIEW_ORBIT.centre.z + Math.sin(angle) * VIEW_ORBIT.radius,
+      )
+
+      base.current.x = THREE.MathUtils.damp(base.current.x, orbit.x, VIEW_LAMBDA, dt)
+      base.current.y = THREE.MathUtils.damp(base.current.y, orbit.y, VIEW_LAMBDA, dt)
+      base.current.z = THREE.MathUtils.damp(base.current.z, orbit.z, VIEW_LAMBDA, dt)
+
+      scratch.look.copy(VIEW_ORBIT.lookAt)
+      // The heading is used only by the ground-clearance lookahead below.
+      scratch.heading.set(-Math.sin(angle), 0, Math.cos(angle))
+      arc.current = THREE.MathUtils.damp(arc.current, 0, ARC_LAMBDA, dt)
+
+      applyLook(dt, scratch.look, VIEW_LAMBDA)
+      return
+    }
+
     const target = stations[route]
 
     // 1. The flight: base position eases toward the station.
@@ -157,49 +259,15 @@ export function CameraRig({ route, animate }: CameraRigProps) {
       camera.aspect,
       scratch.look,
     )
-    currentLook.current.x = THREE.MathUtils.damp(currentLook.current.x, desiredLook.x, TRAVEL_LAMBDA, dt)
-    currentLook.current.y = THREE.MathUtils.damp(currentLook.current.y, desiredLook.y, TRAVEL_LAMBDA, dt)
-    currentLook.current.z = THREE.MathUtils.damp(currentLook.current.z, desiredLook.z, TRAVEL_LAMBDA, dt)
-
-    // 3. The parallax: an independent offset, so it never perturbs the flight.
-    const desired = scratch.desiredParallax.set(
-      pointer.x * PARALLAX_RANGE.x,
-      -pointer.y * PARALLAX_RANGE.y,
-      0,
-    )
-    parallax.current.x = THREE.MathUtils.damp(parallax.current.x, desired.x, PARALLAX_LAMBDA, dt)
-    parallax.current.y = THREE.MathUtils.damp(parallax.current.y, desired.y, PARALLAX_LAMBDA, dt)
-
-    // 4. The arc: a parabola over the flight, zero at both ends so it neither
+    // 3. The arc: a parabola over the flight, zero at both ends so it neither
     //    disturbs the departure pose nor the arrival one, and eased so that
     //    redirecting mid-flight bends the path rather than stepping it.
     const desiredArc = Math.sin(Math.PI * travel.progress) * arcHeight.current
     arc.current = THREE.MathUtils.damp(arc.current, desiredArc, ARC_LAMBDA, dt)
 
-    camera.position.set(
-      base.current.x + parallax.current.x,
-      base.current.y + arc.current + parallax.current.y,
-      base.current.z,
-    )
+    scratch.heading.copy(target.position).sub(base.current).setY(0)
 
-    // 5. The floor: whatever the arc decided, stay clear of the ground here and
-    //    just ahead, so a descent toward a station cannot clip the ridge in
-    //    front of it.
-    const heading = scratch.heading
-      .copy(target.position)
-      .sub(base.current)
-      .setY(0)
-    if (heading.lengthSq() > 1e-6) heading.normalize().multiplyScalar(LOOKAHEAD)
-
-    const clearance =
-      Math.max(
-        groundOrSea(camera.position.x, camera.position.z),
-        groundOrSea(camera.position.x + heading.x, camera.position.z + heading.z),
-      ) + MIN_CLEARANCE
-
-    if (camera.position.y < clearance) camera.position.y = clearance
-
-    camera.lookAt(currentLook.current)
+    applyLook(dt, desiredLook, TRAVEL_LAMBDA)
   })
 
   return null
