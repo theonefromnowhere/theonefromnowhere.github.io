@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { buildIslandGeometry } from './island'
 import { Waterfall } from './Waterfall'
-import { allStations } from './world'
+import { allStations, VIEW_ORBIT } from './world'
 
 /**
  * Flying islands, scattered high across the world.
@@ -78,14 +78,26 @@ const ISLANDS: IslandSpec[] = [
   { seed: 808, position: [64, 52, -92], radius: 7.5, depth: 9, spin: -0.011, bob: 1.1 },
 ]
 
-/** Extra room left between an island's bounding sphere and the camera. */
-const ISLAND_CLEARANCE = 11
+/**
+ * Extra room between an island's bounding sphere and the camera.
+ *
+ * Modest on purpose. The sphere already uses `max(radius, depth)` in every
+ * direction, which for these keel-heavy shapes overestimates the horizontal
+ * extent by a wide margin, so the effective gap is larger than this number
+ * suggests. Raising it forces islands to shove each other around the map and
+ * climb out of the composition to find room.
+ */
+const ISLAND_CLEARANCE = 6
 /** Samples per flight path. The path is exactly parameterised by progress. */
 const PATH_SAMPLES = 12
 
 /**
- * Every point the camera can occupy: the stations themselves, and the arced
- * paths between each pair of them.
+ * Every point the camera can occupy on a station-to-station flight: the
+ * stations themselves and the arced paths between each pair.
+ *
+ * The cinematic orbit is handled separately, by `clearOfOrbit` — sampling a
+ * ring as points and pushing away from each in turn makes an island chase its
+ * own tail around the circle and fling itself hundreds of units away.
  *
  * This mirrors the rig's geometry exactly. `CameraRig` damps its position
  * toward the target and lifts it by `sin(π · progress) · arcHeight`, where
@@ -116,39 +128,122 @@ function cameraPath(): THREE.Vector3[] {
 }
 
 /**
- * Pushes an island horizontally clear of anywhere the camera goes.
+ * Pushes an island clear of the cinematic orbit, radially with respect to the
+ * orbit's centre — the shortest move that works, and a single decision rather
+ * than an accumulation of nudges.
  *
- * Without this, an island that happens to sit on a station or a flight path
- * swallows the camera, and the screen fills with the near-black interior of
- * its keel — which looks exactly like a broken renderer. Doing it here rather
- * than by hand-tuning coordinates means retuning a station cannot silently
- * reintroduce it.
+ * An island escapes either by being vertically clear of the band the orbit
+ * sweeps, or by sitting far enough inside or outside the ring. The vertical
+ * slack it already has reduces the horizontal distance it needs, which is why
+ * `needed` is the leg of a right triangle rather than the full clearance.
+ *
+ * Returns whether it had to move.
+ */
+function clearOfOrbit(position: THREE.Vector3, bound: number): boolean {
+  const required = bound + ISLAND_CLEARANCE
+  const top = VIEW_ORBIT.altitude + VIEW_ORBIT.altitudeSwing
+  const bottom = VIEW_ORBIT.altitude - VIEW_ORBIT.altitudeSwing
+
+  const verticalGap =
+    position.y > top ? position.y - top : position.y < bottom ? bottom - position.y : 0
+  if (verticalGap >= required) return false
+
+  const needed = Math.sqrt(Math.max(required * required - verticalGap * verticalGap, 0))
+
+  const dx = position.x - VIEW_ORBIT.centre.x
+  const dz = position.z - VIEW_ORBIT.centre.z
+  const distance = Math.hypot(dx, dz)
+  if (Math.abs(distance - VIEW_ORBIT.radius) >= needed) return false
+
+  const inside = distance < VIEW_ORBIT.radius
+  let target = inside ? VIEW_ORBIT.radius - needed - 1 : VIEW_ORBIT.radius + needed + 1
+  // Moving inward would take it through the centre and out the far side.
+  if (target < 0) target = VIEW_ORBIT.radius + needed + 1
+
+  const ux = distance < 1e-6 ? 1 : dx / distance
+  const uz = distance < 1e-6 ? 0 : dz / distance
+  position.x = VIEW_ORBIT.centre.x + ux * target
+  position.z = VIEW_ORBIT.centre.z + uz * target
+  return true
+}
+
+/** How badly a position violates its clearances: 0 or more means it is clear. */
+function worstGap(position: THREE.Vector3, path: THREE.Vector3[], required: number): number {
+  let worst = Infinity
+
+  for (const point of path) worst = Math.min(worst, position.distanceTo(point) - required)
+
+  // Distance to the nearest point of the orbit band, measured in the ring's
+  // own cylindrical terms rather than by sampling it.
+  const top = VIEW_ORBIT.altitude + VIEW_ORBIT.altitudeSwing
+  const bottom = VIEW_ORBIT.altitude - VIEW_ORBIT.altitudeSwing
+  const dy =
+    position.y > top ? position.y - top : position.y < bottom ? bottom - position.y : 0
+  const radial = Math.abs(
+    Math.hypot(position.x - VIEW_ORBIT.centre.x, position.z - VIEW_ORBIT.centre.z) -
+      VIEW_ORBIT.radius,
+  )
+  return Math.min(worst, Math.hypot(dy, radial) - required)
+}
+
+/**
+ * Pushes an island clear of anywhere the camera goes — stations, flight paths
+ * and the cinematic orbit.
+ *
+ * Without this, an island sitting on the camera's route swallows it, and the
+ * screen fills with the near-black interior of its keel, which looks exactly
+ * like a broken renderer. Doing it here rather than by hand-tuning coordinates
+ * means retuning a station cannot silently reintroduce the problem.
+ *
+ * This is a relaxation, not a one-shot solve: the constraints overlap, so
+ * escaping one can breach another. Two things keep it stable. Moves are damped
+ * to a fraction of the violation, which stops an island ping-ponging between a
+ * flight path and the orbit ring and flinging itself hundreds of units away.
+ * And the best position seen is kept, so a run that never fully converges still
+ * returns the least-bad answer instead of wherever it happened to stop.
  */
 function resolvePlacement(spec: IslandSpec, path: THREE.Vector3[]): THREE.Vector3 {
   // Conservative bounding sphere: the keel reaches further than the rim.
-  const required = Math.max(spec.radius, spec.depth) + ISLAND_CLEARANCE
+  const bound = Math.max(spec.radius, spec.depth)
+  const required = bound + ISLAND_CLEARANCE
+
   const position = new THREE.Vector3(...spec.position)
   const away = new THREE.Vector3()
 
-  // A few passes, since moving clear of one point can approach another.
-  for (let pass = 0; pass < 4; pass++) {
-    let moved = false
+  const best = position.clone()
+  let bestGap = worstGap(position, path, required)
 
+  for (let pass = 0; pass < 40 && bestGap < 0; pass++) {
     for (const point of path) {
       const distance = position.distanceTo(point)
       if (distance >= required) continue
 
       away.copy(position).sub(point).setY(0)
       if (away.lengthSq() < 1e-6) away.set(1, 0, 0)
-      away.normalize().multiplyScalar(required - distance + 1)
+      // Damped: a full correction per constraint per pass oscillates.
+      away.normalize().multiplyScalar((required - distance) * 0.4)
       position.add(away)
-      moved = true
     }
 
-    if (!moved) break
+    clearOfOrbit(position, bound)
+
+    const gap = worstGap(position, path, required)
+    if (gap > bestGap) {
+      bestGap = gap
+      best.copy(position)
+    }
   }
 
-  return position
+  // Last resort: go over the top. A big island near the middle of the map can
+  // have nowhere to stand — the flight arcs pass above it and the orbit ring
+  // around it — and sliding sideways only trades one breach for another.
+  // Height always works, because every camera path has a bounded ceiling.
+  for (let lift = 0; lift < 8 && bestGap < 0; lift++) {
+    best.y += -bestGap + 1
+    bestGap = worstGap(best, path, required)
+  }
+
+  return best
 }
 
 export function Islands({ animate }: { animate: boolean }) {

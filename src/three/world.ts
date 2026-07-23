@@ -183,6 +183,8 @@ export const VIEW_ORBIT = {
   lookAt: new THREE.Vector3(0, 9, -55),
   radius: 44,
   altitude: 33,
+  /** How far the orbit rises and falls either side of `altitude`. */
+  altitudeSwing: 9,
   /** Radians per second — a full circuit takes a little over two minutes. */
   speed: 0.05,
 }

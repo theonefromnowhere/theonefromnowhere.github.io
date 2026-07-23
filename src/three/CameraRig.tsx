@@ -212,7 +212,7 @@ export function CameraRig({ route, animate }: CameraRigProps) {
       const orbit = scratch.orbit.set(
         VIEW_ORBIT.centre.x + Math.cos(angle) * VIEW_ORBIT.radius,
         // A slow rise and fall, so the circuit does not read as a turntable.
-        VIEW_ORBIT.altitude + Math.sin(viewTime.current * 0.085) * 9,
+        VIEW_ORBIT.altitude + Math.sin(viewTime.current * 0.085) * VIEW_ORBIT.altitudeSwing,
         VIEW_ORBIT.centre.z + Math.sin(angle) * VIEW_ORBIT.radius,
       )
 
